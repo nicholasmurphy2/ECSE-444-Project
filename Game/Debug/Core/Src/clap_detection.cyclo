@@ -1,0 +1,2 @@
+../Core/Src/clap_detection.c:19:9:ClapDetector_CheckForClap	6
+../Core/Src/clap_detection.c:45:6:ClapDetector_DMA_Complete_Callback	1
