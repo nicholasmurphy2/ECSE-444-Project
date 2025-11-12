@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "clap_detection.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -100,7 +101,9 @@ int main(void)
   MX_DFSDM1_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  // Initialize and start the continuous clap detector
+  ClapDetector_Init();
+  ClapDetector_Start();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -111,16 +114,13 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	//terminal uart to test what gets detected as a clap
-	HAL_Delay(1000);
-	HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
-	if (ClapDetector_CheckForClap()) {
-		sprintf((char*)txbuffer, "Yes\r\n");
-	} else {
-		sprintf((char*)txbuffer, "No\r\n");
+	if (ClapDetector_WasClapDetected()) {
+		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);   // Blink LED
+	    sprintf((char*)txbuffer, "Clap detected!\r\n");
+	    HAL_UART_Transmit(&huart1, txbuffer, strlen((char*)txbuffer), HAL_MAX_DELAY);
 	}
-	HAL_UART_Transmit(&huart1, txbuffer, strlen((char*)txbuffer), HAL_MAX_DELAY);
-	HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
-	HAL_Delay(1000);
+
+	HAL_Delay(50);
   }
   /* USER CODE END 3 */
 }
@@ -325,9 +325,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filter) {
-	ClapDetector_DMA_Complete_Callback();
-}
 
 /* USER CODE END 4 */
 

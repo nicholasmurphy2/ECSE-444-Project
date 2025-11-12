@@ -7,43 +7,57 @@
 
 #include "clap_detection.h"
 
-#define CLAP_THRESHOLD  1500000
-#define CLAP_WINDOW_MS  1000
-#define CLAP_BUF_SIZE   64000   // DFSDM buffer size for detection
-
 extern DFSDM_Filter_HandleTypeDef hdfsdm1_filter0; // from main.c
 
 static int32_t clapBuf[CLAP_BUF_SIZE];
-static volatile uint8_t clapRecordingDone = 0;
+static volatile uint8_t clapDetected = 0;
+static uint32_t lastClapTime = 0;
 
-uint8_t ClapDetector_CheckForClap(void) {
-    clapRecordingDone = 0;
+// ---------- Initialization ----------
+void ClapDetector_Init(void) {
+    clapDetected = 0;
+    lastClapTime = 0;
+}
 
-    // Start DMA recording
-    HAL_DFSDM_FilterRegularStart_DMA(&hdfsdm1_filter0, clapBuf, CLAP_BUF_SIZE);
+// ---------- Start Continuous Recording ----------
+void ClapDetector_Start(void) {
+	HAL_DFSDM_FilterRegularStart_DMA(&hdfsdm1_filter0, clapBuf, CLAP_BUF_SIZE);
+}
 
-    // Wait until DMA completes or timeout
-    uint32_t start = HAL_GetTick();
-    while (!clapRecordingDone) {
-        if (HAL_GetTick() - start > CLAP_WINDOW_MS) {
-            HAL_DFSDM_FilterRegularStop_DMA(&hdfsdm1_filter0);
-            break;
-        }
+// ---------- Callback: Half buffer filled ----------
+void HAL_DFSDM_FilterRegConvHalfCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filter) {
+    ClapDetector_ProcessSamples(clapBuf, CLAP_BUF_SIZE / 2);
+}
+
+// ---------- Callback: Full buffer filled ----------
+void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filter) {
+    ClapDetector_ProcessSamples(&clapBuf[CLAP_BUF_SIZE / 2], CLAP_BUF_SIZE / 2);
+}
+
+// ---------- Main loop polling function ----------
+uint8_t ClapDetector_WasClapDetected(void) {
+    if (clapDetected) {
+        clapDetected = 0;  // reset flag
+        return 1;
     }
+    return 0;
+}
 
-    // Analyze buffer
+// ---------- Process samples and detect claps ----------
+void ClapDetector_ProcessSamples(int32_t *samples, uint32_t len) {
     int32_t maxAmp = 0;
-    for (int i = 0; i < CLAP_BUF_SIZE; i++) {
-        int32_t val = clapBuf[i];
+    for (uint32_t i = 0; i < len; i++) {
+        int32_t val = samples[i];
         if (val < 0) val = -val;
         if (val > maxAmp) maxAmp = val;
     }
 
-    return (maxAmp > CLAP_THRESHOLD);
-}
-
-void ClapDetector_DMA_Complete_Callback(void) {
-	HAL_DFSDM_FilterRegularStop_DMA(&hdfsdm1_filter0);
-	clapRecordingDone = 1;
+    if (maxAmp > CLAP_THRESHOLD) {
+        uint32_t now = HAL_GetTick();
+        if (now - lastClapTime > CLAP_DEBOUNCE_MS) {
+            clapDetected = 1;
+            lastClapTime = now;
+        }
+    }
 }
 

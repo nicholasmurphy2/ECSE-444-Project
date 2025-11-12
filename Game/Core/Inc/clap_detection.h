@@ -10,11 +10,16 @@
 
 #include "main.h" // for HAL types and DFSDM handle
 
-// Checks for a clap within the defined window
-// Returns 1 if clap detected, 0 otherwise
-uint8_t ClapDetector_CheckForClap(void);
+// Configuration
+#define CLAP_THRESHOLD   1500000
+#define CLAP_BUF_SIZE    4800     // Smaller buffer (~100ms if 48kHz)
+#define CLAP_DEBOUNCE_MS 300      // Ignore multiple claps within 300 ms
 
-// DMA callback to signal buffer is filled
-void ClapDetector_DMA_Complete_Callback(void);
+void ClapDetector_Init(void);
+void ClapDetector_Start(void);
+uint8_t ClapDetector_WasClapDetected(void);
+
+// Internal callbacks (called by HAL)
+void ClapDetector_ProcessSamples(int32_t *samples, uint32_t len);
 
 #endif /* INC_CLAP_DETECTION_H_ */
