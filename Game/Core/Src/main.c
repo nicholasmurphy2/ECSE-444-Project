@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "app.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -131,6 +132,8 @@ int main(void)
   MX_USART3_UART_Init();
   MX_USB_OTG_FS_USB_Init();
   /* USER CODE BEGIN 2 */
+
+  BOPIT_Start();
 
   /* USER CODE END 2 */
 
@@ -903,6 +906,12 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void HAL_GPIO_EXTI_Callback(uint16_t pin) {
+  if (pin == BUTTON_EXTI13_Pin) {
+    BOPIT_Handle_Button_Press();
+  }
+}
 
 /* USER CODE END 4 */
 
