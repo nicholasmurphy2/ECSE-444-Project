@@ -143,11 +143,11 @@ void AP_StartLoadingProcedure(uint8_t n) {
 	}
 
 	// signal ready to start loading
-	HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET);
 
 	while (1) {
 		if (AP_IsRecording == 1) {
-			HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+			HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
 			HAL_Delay(WAIT_TIME);
 		}
 
