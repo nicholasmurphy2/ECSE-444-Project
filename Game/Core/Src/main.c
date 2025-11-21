@@ -133,7 +133,7 @@ int main(void)
   MX_USB_OTG_FS_USB_Init();
   /* USER CODE BEGIN 2 */
 
-  BOPIT_Start();
+  BOPIT_Start(&huart1);
 
   /* USER CODE END 2 */
 

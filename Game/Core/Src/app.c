@@ -1,19 +1,15 @@
 #include "app.h"
+#include "uart_display.h"
 
-
-#define APP_MODE_IDLE 0
-#define APP_MODE_PLAYING_COMMAND 1
-#define APP_MODE_CAPTURING_RESPONSE 2
-
-#define COMMAND_NONE 0
-#define COMMAND_CLAP_IT 1
-
-volatile static uint8_t app_mode = APP_MODE_IDLE;
-volatile static uint8_t command = COMMAND_NONE;
+volatile static AppMode app_mode = APP_MODE_IDLE;
+volatile static BopItCommand command = COMMAND_NONE;
 volatile static uint32_t score = 0;
 
-void BOPIT_Start() {
+void BOPIT_Start(UART_HandleTypeDef *huart) {
     while (1) {
+    	UD_UpdateGameStatus(huart, app_mode, command);
+    	UD_UpdateScore(huart, score);
+
         switch (app_mode) {
             case APP_MODE_IDLE:
                 break;
@@ -37,7 +33,7 @@ void BOPIT_Handle_Button_Press() {
         case APP_MODE_IDLE:
             app_mode = APP_MODE_PLAYING_COMMAND;
             break;
-        case APP_MODE_PLAYING_COMMAND:
+        default:
             break;
     }
 }
