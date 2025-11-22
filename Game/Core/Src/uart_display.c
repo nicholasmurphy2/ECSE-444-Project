@@ -35,6 +35,9 @@ void Command_ToString(BopItCommand command, char *buffer) {
 }
 
 void UD_UpdateGameStatus(UART_HandleTypeDef *huart, AppMode app_mode, BopItCommand command) {
+	if (huart == NULL) {
+		return;
+	}
 	char buffer[200];
 	char app_mode_str[25];
 	char command_str[25];
@@ -47,6 +50,9 @@ void UD_UpdateGameStatus(UART_HandleTypeDef *huart, AppMode app_mode, BopItComma
 }
 
 void UD_UpdateScore(UART_HandleTypeDef *huart, uint32_t score) {
+	if (huart == NULL) {
+		return;
+	}
 	char buffer[100];
 
 	sprintf(buffer, "{\"score\": %lu}", score);
