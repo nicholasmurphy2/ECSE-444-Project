@@ -132,7 +132,8 @@ int main(void)
   MX_USART3_UART_Init();
   MX_USB_OTG_FS_USB_Init();
   /* USER CODE BEGIN 2 */
-
+  BOPIT_Set_I2C_Handle(&hi2c2);
+  BOPIT_Set_UART_Handle(&huart1);
   BOPIT_Start();
 
   /* USER CODE END 2 */
