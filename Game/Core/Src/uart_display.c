@@ -1,6 +1,7 @@
 
 #include "uart_display.h"
 #include <string.h>
+#include <stdio.h>
 
 void AppMode_ToString(AppMode app_mode, char *buffer) {
 	switch (app_mode) {
@@ -48,6 +49,6 @@ void UD_UpdateGameStatus(UART_HandleTypeDef *huart, AppMode app_mode, BopItComma
 void UD_UpdateScore(UART_HandleTypeDef *huart, uint32_t score) {
 	char buffer[100];
 
-	sprintf(buffer, "{\"score\": %d}", score);
+	sprintf(buffer, "{\"score\": %lu}", score);
 	HAL_UART_Transmit(huart, (uint8_t*)buffer, strlen(buffer), 100);
 }
