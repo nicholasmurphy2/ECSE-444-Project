@@ -3,6 +3,7 @@
 #include "app.h"
 #include "uart_display.h"
 #include "tof.h"
+#include "clap_detection.h"
 
 // PRIVATE DEFINITIONS
 
@@ -70,15 +71,17 @@ void BOPIT_Set_UART_Handle(UART_HandleTypeDef *huart_in) {
   * @brief  Called to reset game data in preparation for next game.
   */
 void reset_game_data() {
-	  app_mode = APP_MODE_IDLE;
+	app_mode = APP_MODE_IDLE;
     score = 0;
-	  command = COMMAND_NONE;
+	command = COMMAND_NONE;
     time_limit = MAX_TIME_LIMIT;
     response_status = RESPONSE_STATUS_FAILURE;	// Redundant statement that should be unused
 }
 
 void BOPIT_Start() {
     reset_game_data();
+    ClapDetector_Init();
+    ClapDetector_Start();
     while (1) {
     		UD_UpdateGameStatus(huart, app_mode, command);
     		UD_UpdateScore(huart, score);
@@ -144,10 +147,21 @@ void handle_capture() {
 						#endif
             break;
         case COMMAND_CLAP_IT:
-            response_status = RESPONSE_STATUS_SUCCESS; // Temporary; may remove when implemented
-        		__NOP();
-            // TODO: Capture response
-            break;
+        	response_status = RESPONSE_STATUS_FAILURE;
+        	start_countdown();
+
+        	for (;;) {
+        		if (update_countdown_and_get_result() == COUNTDOWN_STATUS_OUT_OF_TIME) {
+        			response_status = RESPONSE_STATUS_FAILURE;
+        	        break;
+        	    }
+
+        	    if (ClapDetector_WasClapDetected()) {
+        	    	response_status = RESPONSE_STATUS_SUCCESS;
+        	        break;
+        	    }
+        	}
+        	break;
         case COMMAND_COVER_IT:
             start_countdown();
             for (;;) {
@@ -200,7 +214,7 @@ uint8_t rand(uint8_t max_value) {
 				seed = (uint32_t)HAL_GetTick();
 		}
 		seed = seed * 1103515245 + 12345;
-		return  (uint8_t)((seed / 65536) % 32768) % (3 + 1);
+		return  (uint8_t)((seed / 65536) % 32768) % (max_value + 1);
 }
 
 /**
