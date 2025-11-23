@@ -102,9 +102,20 @@ void BOPIT_Start() {
                     game_over_sequence();
                     reset_game_data();
                     app_mode = APP_MODE_IDLE;
-										#ifdef DO_POWER_SAVING
-                    // TODO: Switch to low-power sleep mode
-										#endif
+//					#ifdef DO_POWER_SAVING
+//                    // TODO: Switch to low-power sleep mode
+//                    // Stop SysTick to save power
+//                    HAL_SuspendTick();
+//
+//                    // Enter STOP mode, MCU waits here until an EXTI interrupt (button press) occurs
+//                    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+//
+//                    // Resume SysTick after wakeup
+//                    HAL_ResumeTick();
+//
+//                    // Reconfigure system clock after STOP mode
+//                    SystemClock_Config();
+//					#endif
                 } else {
                     score++;
                     app_mode = APP_MODE_PLAYING_COMMAND;
@@ -148,6 +159,7 @@ void handle_capture() {
             break;
         case COMMAND_CLAP_IT:
         	response_status = RESPONSE_STATUS_FAILURE;
+        	ClapDetector_WasClapDetected();
         	start_countdown();
 
         	for (;;) {
