@@ -15,7 +15,7 @@ void AppMode_ToString(AppMode app_mode, char *buffer) {
 		sprintf(buffer, "capturing_response");
 		break;
 	default:
-		sprintf(buffer, "unknown");
+		sprintf(buffer, "unknown: %d", app_mode);
 		break;
 	}
 }
@@ -28,8 +28,14 @@ void Command_ToString(BopItCommand command, char *buffer) {
 	case COMMAND_CLAP_IT:
 		sprintf(buffer, "clap_it");
 		break;
+	case COMMAND_COVER_IT:
+		sprintf(buffer, "cover_it");
+		break;
+	case COMMAND_BOP_IT:
+		sprintf(buffer, "bop_it");
+		break;
 	default:
-		sprintf(buffer, "unknown");
+		sprintf(buffer, "unknown: %d", command);
 		break;
 	}
 }
@@ -45,7 +51,7 @@ void UD_UpdateGameStatus(UART_HandleTypeDef *huart, AppMode app_mode, BopItComma
 	AppMode_ToString(app_mode, app_mode_str);
 	Command_ToString(command, command_str);
 
-	sprintf(buffer, "{\"app_mode\": \"%s\", \"command\": \"%s\"}", app_mode_str, command_str);
+	sprintf(buffer, "{\"app_mode\": \"%s\", \"command\": \"%s\"}\r\n", app_mode_str, command_str);
 	HAL_UART_Transmit(huart, (uint8_t*)buffer, strlen(buffer), 100);
 }
 
@@ -55,6 +61,6 @@ void UD_UpdateScore(UART_HandleTypeDef *huart, uint32_t score) {
 	}
 	char buffer[100];
 
-	sprintf(buffer, "{\"score\": %lu}", score);
+	sprintf(buffer, "{\"score\": %lu}\r\n", score);
 	HAL_UART_Transmit(huart, (uint8_t*)buffer, strlen(buffer), 100);
 }
