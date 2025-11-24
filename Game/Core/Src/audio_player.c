@@ -115,7 +115,7 @@ void AP_HandleButtonPress() {
 
 // Plays the recording synchronously.
 void AP_PlayRecording(int rec_num) {
-	recording_number = rec_num;
+	recording_number = rec_num - 1;
 	play_recording();
 	uint32_t start_time = HAL_GetTick();
 	while (HAL_GetTick() - start_time < REC_DURATION_MS) {}

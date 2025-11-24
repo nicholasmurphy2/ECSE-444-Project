@@ -7,7 +7,7 @@
 #include "clap_detection.h"
 
 // PRIVATE DEFINITIONS
-
+#define DO_POWER_SAVING
 #define NUM_COMMANDS 3
 #define MIN_TIME_LIMIT 4000
 #define MAX_TIME_LIMIT 8000
@@ -84,16 +84,14 @@ void BOPIT_Start() {
     ClapDetector_Init();
     ClapDetector_Start();
     while (1) {
-    		UD_UpdateGameStatus(huart, app_mode, command);
-    		UD_UpdateScore(huart, score);
         switch (app_mode) {
             case APP_MODE_IDLE:
+            	UD_UpdateGameStatus(huart, app_mode, command);
                 break;
             case APP_MODE_PLAYING_COMMAND:
                 command = rand(NUM_COMMANDS - 1) + 1;
-                // TODO: Play command
                 AP_PlayRecording(command);
-                HAL_Delay(1000);	// Add small delay between rounds
+                UD_UpdateGameStatus(huart, app_mode, command);
                 app_mode = APP_MODE_CAPTURING_RESPONSE;
                 break;
             case APP_MODE_CAPTURING_RESPONSE:
@@ -103,22 +101,15 @@ void BOPIT_Start() {
                     game_over_sequence();
                     reset_game_data();
                     app_mode = APP_MODE_IDLE;
-//					#ifdef DO_POWER_SAVING
-//                    // TODO: Switch to low-power sleep mode
-//                    // Stop SysTick to save power
-//                    HAL_SuspendTick();
-//
-//                    // Enter STOP mode, MCU waits here until an EXTI interrupt (button press) occurs
-//                    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
-//
-//                    // Resume SysTick after wakeup
-//                    HAL_ResumeTick();
-//
-//                    // Reconfigure system clock after STOP mode
-//                    SystemClock_Config();
-//					#endif
+					#ifdef DO_POWER_SAVING
+						HAL_SuspendTick();
+						HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+						HAL_ResumeTick();
+						SystemClock_Config();	// Reconfigure system clock after STOP mode
+					#endif
                 } else {
                     score++;
+                    UD_UpdateScore(huart, score);
                     app_mode = APP_MODE_PLAYING_COMMAND;
                 }
                 break;
@@ -132,9 +123,6 @@ void BOPIT_Start() {
 void BOPIT_Handle_Button_Press() {
     switch (app_mode) {
         case APP_MODE_IDLE:
-						#ifdef DO_POWER_SAVING
-						// TODO: Exit low-power sleep mode
-						#endif
             app_mode = APP_MODE_PLAYING_COMMAND;
             break;
         case APP_MODE_PLAYING_COMMAND:

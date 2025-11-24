@@ -25,7 +25,7 @@ const uint8_t GET_DATA_REQUEST[] = {0x1e};			// Must respect MAX_BUFFER_SIZE
 
 // Magic numbers
 const int MIN_VALUE = 1;
-const int MAX_VALUE = 2000;
+const int MAX_VALUE = 200;
 
 // State variables
 static int count = 0;
