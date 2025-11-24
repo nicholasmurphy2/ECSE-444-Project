@@ -40,19 +40,30 @@ void Command_ToString(BopItCommand command, char *buffer) {
 	}
 }
 
-void UD_UpdateGameStatus(UART_HandleTypeDef *huart, AppMode app_mode, BopItCommand command) {
+void UD_UpdateAppMode(UART_HandleTypeDef *huart, AppMode app_mode) {
 	if (huart == NULL) {
 		return;
 	}
-	char buffer[200];
+	char buffer[100];
 	char app_mode_str[25];
-	char command_str[25];
 
 	AppMode_ToString(app_mode, app_mode_str);
+
+	sprintf(buffer, "{\"app_mode\": \"%s\"}\r\n", app_mode_str);
+	HAL_UART_Transmit(huart, (uint8_t*)buffer, strlen(buffer), 250);
+}
+
+void UD_UpdateCommand(UART_HandleTypeDef *huart, BopItCommand command) {
+	if (huart == NULL) {
+		return;
+	}
+	char buffer[100];
+	char command_str[25];
+
 	Command_ToString(command, command_str);
 
-	sprintf(buffer, "{\"app_mode\": \"%s\", \"command\": \"%s\"}\r\n", app_mode_str, command_str);
-	HAL_UART_Transmit(huart, (uint8_t*)buffer, strlen(buffer), 100);
+	sprintf(buffer, "{\"command\": \"%s\"}\r\n", command_str);
+	HAL_UART_Transmit(huart, (uint8_t*)buffer, strlen(buffer), 250);
 }
 
 void UD_UpdateScore(UART_HandleTypeDef *huart, uint32_t score) {
@@ -62,5 +73,53 @@ void UD_UpdateScore(UART_HandleTypeDef *huart, uint32_t score) {
 	char buffer[100];
 
 	sprintf(buffer, "{\"score\": %lu}\r\n", score);
-	HAL_UART_Transmit(huart, (uint8_t*)buffer, strlen(buffer), 100);
+	HAL_UART_Transmit(huart, (uint8_t*)buffer, strlen(buffer), 250);
+}
+
+void UD_CommandDone(UART_HandleTypeDef *huart, bool success) {
+	if (huart == NULL) {
+		return;
+	}
+
+	char buffer[100];
+	if (success) {
+		sprintf(buffer, "{\"command_done_success\": true}\r\n");
+	} else {
+		sprintf(buffer, "{\"command_done_success\": false}\r\n");
+	}
+	HAL_UART_Transmit(huart, (uint8_t*)buffer, strlen(buffer), 250);
+}
+
+void UD_UpdateLowPowerMode(UART_HandleTypeDef *huart, bool lowPower) {
+	if (huart == NULL) {
+		return;
+	}
+
+	char buffer[100];
+	if (lowPower) {
+		sprintf(buffer, "{\"low_power\": true}\r\n");
+	} else {
+		sprintf(buffer, "{\"low_power\": false}\r\n");
+	}
+	HAL_UART_Transmit(huart, (uint8_t*)buffer, strlen(buffer), 250);
+}
+
+void UD_UpdateTimeLeft(UART_HandleTypeDef *huart, uint32_t timeLeft) {
+	if (huart == NULL) {
+		return;
+	}
+	char buffer[100];
+
+	sprintf(buffer, "{\"time_left\": %lu}\r\n", timeLeft);
+	HAL_UART_Transmit(huart, (uint8_t*)buffer, strlen(buffer), 250);
+}
+
+void UD_SendEmpty(UART_HandleTypeDef *huart) {
+	if (huart == NULL) {
+		return;
+	}
+	char buffer[10];
+
+	sprintf(buffer, "\r\n");
+	HAL_UART_Transmit(huart, (uint8_t*)buffer, strlen(buffer), 250);
 }
