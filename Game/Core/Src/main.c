@@ -22,7 +22,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stm32l4s5i_iot01_qspi.h"
-
+#include "app.h"
+#include "audio_player.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
