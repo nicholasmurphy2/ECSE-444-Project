@@ -3,6 +3,7 @@
 #include "app.h"
 #include "uart_display.h"
 #include "tof.h"
+#include "audio_player.h"
 #include "clap_detection.h"
 
 // PRIVATE DEFINITIONS
@@ -91,7 +92,7 @@ void BOPIT_Start() {
             case APP_MODE_PLAYING_COMMAND:
                 command = rand(NUM_COMMANDS - 1) + 1;
                 // TODO: Play command
-                // AP_PlayRecording(command)
+                AP_PlayRecording(command);
                 HAL_Delay(1000);	// Add small delay between rounds
                 app_mode = APP_MODE_CAPTURING_RESPONSE;
                 break;

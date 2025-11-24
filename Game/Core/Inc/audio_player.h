@@ -32,27 +32,27 @@
 // ******************************************************************************
 // */
 //
-//#ifndef INC_AUDIO_PLAYER_H_
-//#define INC_AUDIO_PLAYER_H_
-//
-//#include "main.h"
-//
-//extern volatile uint8_t AP_RecordingReady;
-//extern volatile uint8_t AP_IsRecording;
-//extern volatile uint8_t AP_IsPlaying;
-//
-//void AP_Init(DAC_HandleTypeDef *d, DFSDM_Filter_HandleTypeDef *f);
-//
-//void AP_HandleRecordingFull();
-//
-//void AP_HandleButtonPress();
-//
-//void AP_StartLoadingProcedure(uint8_t n);
-//
-//void AP_PlayRecording(int rec_num);
-//
-//void AP_PlayRecording_Async(int rec_num);
-//
-//void AP_StopRecording();
-//
-//#endif /* INC_AUDIO_PLAYER_H_ */
+#ifndef INC_AUDIO_PLAYER_H_
+#define INC_AUDIO_PLAYER_H_
+
+#include "main.h"
+
+extern volatile uint8_t AP_RecordingReady;
+extern volatile uint8_t AP_IsRecording;
+extern volatile uint8_t AP_IsPlaying;
+
+void AP_Init(DAC_HandleTypeDef *d, DFSDM_Filter_HandleTypeDef *f);
+
+void AP_HandleRecordingFull();
+
+void AP_HandleButtonPress();
+
+void AP_StartLoadingProcedure(uint8_t n);
+
+void AP_PlayRecording(int rec_num);
+
+void AP_PlayRecording_Async(int rec_num);
+
+void AP_StopRecording();
+
+#endif /* INC_AUDIO_PLAYER_H_ */
