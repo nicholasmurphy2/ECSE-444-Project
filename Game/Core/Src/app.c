@@ -7,6 +7,7 @@
 #include "clap_detection.h"
 
 // PRIVATE DEFINITIONS
+
 #define DO_POWER_SAVING
 #define NUM_COMMANDS 3
 #define MIN_TIME_LIMIT 4000
