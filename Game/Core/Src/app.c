@@ -14,13 +14,11 @@
 #define MAX_TIME_LIMIT 8000
 
 typedef enum {
-	RESPONSE_STATUS_SUCCESS,
-	RESPONSE_STATUS_FAILURE
+	RESPONSE_STATUS_SUCCESS, RESPONSE_STATUS_FAILURE
 } ResponseStatus;
 
 typedef enum {
-	COUNTDOWN_STATUS_IN_PROGRESS,
-	COUNTDOWN_STATUS_OUT_OF_TIME
+	COUNTDOWN_STATUS_IN_PROGRESS, COUNTDOWN_STATUS_OUT_OF_TIME
 } CountdownStatus;
 
 // PRIVATE VARIABLES
@@ -48,215 +46,236 @@ static UART_HandleTypeDef *huart = NULL;
 // PRIVATE FUNCTION DECLARATIONS
 
 void handle_capture();
-void game_over_sequence();
 uint8_t rand(uint8_t max_value);
 uint32_t compute_time_limit(uint32_t min, uint32_t max, uint32_t score);
 void start_countdown();
 CountdownStatus update_countdown_and_get_result();
+void go_into_low_power();
 
 // EXPORTED FUNCTIONS
 
 // Peripheral handle exchange functions
 void BOPIT_Set_I2C_Handle(I2C_HandleTypeDef *hi2c_in) {
-    if (hi2c_in != NULL) {
-        hi2c = hi2c_in;
-    }
+	if (hi2c_in != NULL) {
+		hi2c = hi2c_in;
+	}
 }
 
 void BOPIT_Set_UART_Handle(UART_HandleTypeDef *huart_in) {
-    if (huart_in != NULL) {
-        huart = huart_in;
-    }
+	if (huart_in != NULL) {
+		huart = huart_in;
+	}
 }
 
 /**
-  * @brief  Called to reset game data in preparation for next game.
-  */
+ * @brief  Called to reset game data in preparation for next game.
+ */
 void reset_game_data() {
 	app_mode = APP_MODE_IDLE;
-    score = 0;
+	score = 0;
 	command = COMMAND_NONE;
-    time_limit = MAX_TIME_LIMIT;
-    response_status = RESPONSE_STATUS_FAILURE;	// Redundant statement that should be unused
+	time_limit = MAX_TIME_LIMIT;
+	response_status = RESPONSE_STATUS_FAILURE; // Redundant statement that should be unused
+	UD_UpdateAppMode(huart, app_mode);
+	UD_UpdateCommand(huart, command);
 }
 
 void BOPIT_Start() {
-    reset_game_data();
-    ClapDetector_Init();
-    ClapDetector_Start();
-    while (1) {
-        switch (app_mode) {
-            case APP_MODE_IDLE:
-            	UD_UpdateGameStatus(huart, app_mode, command);
-                break;
-            case APP_MODE_PLAYING_COMMAND:
-                command = rand(NUM_COMMANDS - 1) + 1;
-                AP_PlayRecording(command);
-                UD_UpdateGameStatus(huart, app_mode, command);
-                app_mode = APP_MODE_CAPTURING_RESPONSE;
-                break;
-            case APP_MODE_CAPTURING_RESPONSE:
-            		time_limit = compute_time_limit(MIN_TIME_LIMIT, MAX_TIME_LIMIT, score);
-            		handle_capture();
-                if (response_status == RESPONSE_STATUS_FAILURE) {
-                    game_over_sequence();
-                    reset_game_data();
-                    app_mode = APP_MODE_IDLE;
-					#ifdef DO_POWER_SAVING
-						HAL_SuspendTick();
-						HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
-						HAL_ResumeTick();
-						SystemClock_Config();	// Reconfigure system clock after STOP mode
-					#endif
-                } else {
-                    score++;
-                    UD_UpdateScore(huart, score);
-                    app_mode = APP_MODE_PLAYING_COMMAND;
-                }
-                break;
-        }
-    }
+	reset_game_data();
+	ClapDetector_Init();
+	ClapDetector_Start();
+	go_into_low_power();
+	while (1) {
+		switch (app_mode) {
+		case APP_MODE_IDLE:
+			break;
+		case APP_MODE_PLAYING_COMMAND:
+			// needed because of waking from sleep
+			UD_SendEmpty(huart);
+			UD_UpdateAppMode(huart, app_mode);
+			UD_UpdateLowPowerMode(huart, false);
+
+			command = rand(NUM_COMMANDS - 1) + 1;
+			UD_UpdateCommand(huart, command);
+			AP_PlayRecording(command);
+			app_mode = APP_MODE_CAPTURING_RESPONSE;
+			UD_UpdateAppMode(huart, app_mode);
+			break;
+		case APP_MODE_CAPTURING_RESPONSE:
+			time_limit = compute_time_limit(MIN_TIME_LIMIT, MAX_TIME_LIMIT,
+					score);
+			handle_capture();
+			if (response_status == RESPONSE_STATUS_FAILURE) {
+				UD_CommandDone(huart, false);
+				reset_game_data();
+				go_into_low_power();
+			} else {
+				score++;
+				UD_CommandDone(huart, true);
+				UD_UpdateScore(huart, score);
+				app_mode = APP_MODE_PLAYING_COMMAND;
+				UD_UpdateAppMode(huart, app_mode);
+			}
+			break;
+		}
+	}
 }
 
 /**
-  * @brief  Must be called by GPIO button press callback.
-  */
+ * @brief  Must be called by GPIO button press callback.
+ */
 void BOPIT_Handle_Button_Press() {
-    switch (app_mode) {
-        case APP_MODE_IDLE:
-            app_mode = APP_MODE_PLAYING_COMMAND;
-            break;
-        case APP_MODE_PLAYING_COMMAND:
-        		__NOP();
-            break;
-        case APP_MODE_CAPTURING_RESPONSE:
-      			if (command == COMMAND_BOP_IT) {
-      					response_status = RESPONSE_STATUS_SUCCESS;
-      			}
-        	  break;
-    }
+	switch (app_mode) {
+	case APP_MODE_IDLE:
+		app_mode = APP_MODE_PLAYING_COMMAND;
+		UD_UpdateAppMode(huart, app_mode);
+		break;
+	case APP_MODE_PLAYING_COMMAND:
+		__NOP();
+		break;
+	case APP_MODE_CAPTURING_RESPONSE:
+		if (command == COMMAND_BOP_IT) {
+			response_status = RESPONSE_STATUS_SUCCESS;
+		}
+		break;
+	}
 }
 
 /**
-  * @brief  Blocking function that updates response status before returning
-  */
+ * @brief  Blocking function that updates response status before returning
+ */
 void handle_capture() {
-    switch (command) {
-        case COMMAND_NONE:
-						#ifdef DEBUG
-        		Error_Handler();
-						#endif
-            break;
-        case COMMAND_CLAP_IT:
-        	response_status = RESPONSE_STATUS_FAILURE;
-        	ClapDetector_WasClapDetected();
-        	start_countdown();
+	switch (command) {
+	case COMMAND_NONE:
+#ifdef DEBUG
+		Error_Handler();
+#endif
+		break;
+	case COMMAND_CLAP_IT:
+		response_status = RESPONSE_STATUS_FAILURE;
+		ClapDetector_WasClapDetected();
+		start_countdown();
 
-        	for (;;) {
-        		if (update_countdown_and_get_result() == COUNTDOWN_STATUS_OUT_OF_TIME) {
-        			response_status = RESPONSE_STATUS_FAILURE;
-        	        break;
-        	    }
+		for (;;) {
+			if (update_countdown_and_get_result()
+					== COUNTDOWN_STATUS_OUT_OF_TIME) {
+				response_status = RESPONSE_STATUS_FAILURE;
+				break;
+			}
 
-        	    if (ClapDetector_WasClapDetected()) {
-        	    	response_status = RESPONSE_STATUS_SUCCESS;
-        	        break;
-        	    }
-        	}
-        	break;
-        case COMMAND_COVER_IT:
-            start_countdown();
-            for (;;) {
-            		if (update_countdown_and_get_result() == COUNTDOWN_STATUS_OUT_OF_TIME) {
-            			response_status = RESPONSE_STATUS_FAILURE;
-            			break;
-            		} else if (TOF_run_task(hi2c) == TOF_SUCCESS) {
-            			response_status = RESPONSE_STATUS_SUCCESS;
-            			break;
-            		}
-            		// Otherwise, TOF_status = TOF_PENDING so we loop around to try again
-        	  }
-        	  break;
-        case COMMAND_BOP_IT:
-        		// Sets the response status to failure at beginning
-        	  response_status = RESPONSE_STATUS_FAILURE;
-        	  start_countdown();
-        		for (;;) {
-        				if ((update_countdown_and_get_result() == COUNTDOWN_STATUS_OUT_OF_TIME) ||
-        						(response_status == RESPONSE_STATUS_SUCCESS)) {
-        					  break;
-        				}
-        		}
-        		// When button is pressed, the interrupt will call BOPIT_Handle_Button_Press to update
-        		// the response status to RESPONSE_STATUS_SUCCESS.
-        		break;
-        default:
-						#ifdef DEBUG
-						Error_Handler();
-						#endif
-            break;
-    }
+			if (ClapDetector_WasClapDetected()) {
+				response_status = RESPONSE_STATUS_SUCCESS;
+				break;
+			}
+		}
+		break;
+	case COMMAND_COVER_IT:
+		start_countdown();
+		for (;;) {
+			if (update_countdown_and_get_result()
+					== COUNTDOWN_STATUS_OUT_OF_TIME) {
+				response_status = RESPONSE_STATUS_FAILURE;
+				break;
+			} else if (TOF_run_task(hi2c) == TOF_SUCCESS) {
+				response_status = RESPONSE_STATUS_SUCCESS;
+				break;
+			}
+			// Otherwise, TOF_status = TOF_PENDING so we loop around to try again
+		}
+		break;
+	case COMMAND_BOP_IT:
+		// Sets the response status to failure at beginning
+		response_status = RESPONSE_STATUS_FAILURE;
+		start_countdown();
+		for (;;) {
+			if ((update_countdown_and_get_result()
+					== COUNTDOWN_STATUS_OUT_OF_TIME)
+					|| (response_status == RESPONSE_STATUS_SUCCESS)) {
+				break;
+			}
+		}
+		// When button is pressed, the interrupt will call BOPIT_Handle_Button_Press to update
+		// the response status to RESPONSE_STATUS_SUCCESS.
+		break;
+	default:
+#ifdef DEBUG
+		Error_Handler();
+#endif
+		break;
+	}
 }
 
 // PRIVATE FUNCTION IMPLEMENTATIONS
 
 /**
-  * @brief  Indicates to the user that the game has ended.
-  */
-void game_over_sequence() {
-		// TODO
-		__NOP();
-}
-
-/**
-  * @brief  Returns a pseudorandom integer in the range [0, max_value].
-  */
+ * @brief  Returns a pseudorandom integer in the range [0, max_value].
+ */
 uint8_t rand(uint8_t max_value) {
-		if (seed == 0) {
-				seed = (uint32_t)HAL_GetTick();
-		}
-		seed = seed * 1103515245 + 12345;
-		return  (uint8_t)((seed / 65536) % 32768) % (max_value + 1);
+	if (seed == 0) {
+		seed = (uint32_t) HAL_GetTick();
+	}
+	seed = seed * 1103515245 + 12345;
+	return (uint8_t) ((seed / 65536) % 32768) % (max_value + 1);
 }
 
 /**
-  * @brief  Computes time limit for next command based on score.
-  * @param min  Minimum time limit in milliseconds.
-  * @param max	Maximum time limit milliseconds.
-  * @retval Computed time limit.
-  */
+ * @brief  Computes time limit for next command based on score.
+ * @param min  Minimum time limit in milliseconds.
+ * @param max	Maximum time limit milliseconds.
+ * @retval Computed time limit.
+ */
 uint32_t compute_time_limit(uint32_t min, uint32_t max, uint32_t score) {
-    if (score < 3) {
-        return max;
-    } else if (score < 20) {
-        return max - ((score - 3) * ((max - min) / (20 - 3)));
-    } else {
-        return min;
-    }
+	if (score < 3) {
+		return max;
+	} else if (score < 20) {
+		return max - ((score - 3) * ((max - min) / (20 - 3)));
+	} else {
+		return min;
+	}
 }
 
 /**
-  * @brief  Starts countdown for user to correctly respond to command
-  */
+ * @brief  Starts countdown for user to correctly respond to command
+ */
 void start_countdown() {
-  	initial_timestamp = HAL_GetTick();
+	initial_timestamp = HAL_GetTick();
 }
 
 /**
-  * @brief  Updates/checks the countdown. If used, this function must be called periodically
-  * 				in order to function.
-  * @retval Returns COUNTDOWN_STATUS_OUT_OF_TIME if countdown has completed. Otherwise returns
-  * 				COUNTDOWN_STATUS_IN_PROGRESS if there is still time remaining.
-  */
+ * @brief  Updates/checks the countdown. If used, this function must be called periodically
+ * 				in order to function.
+ * @retval Returns COUNTDOWN_STATUS_OUT_OF_TIME if countdown has completed. Otherwise returns
+ * 				COUNTDOWN_STATUS_IN_PROGRESS if there is still time remaining.
+ */
 CountdownStatus update_countdown_and_get_result() {
-	  // Updates global time elapsed variable
-		time_elapsed = HAL_GetTick() - initial_timestamp;
+	// Updates global time elapsed variable
+	time_elapsed = HAL_GetTick() - initial_timestamp;
+	static int skip = 0; // used for skipping all but every xth message
 
-		// This is a good place to send game data or debug messages over UART to the console
+	// This is a good place to send game data or debug messages over UART to the console
 
-	  if (time_elapsed > time_limit) {
-	  	  return COUNTDOWN_STATUS_OUT_OF_TIME;
-	  }
-	  // Else
-	  return COUNTDOWN_STATUS_IN_PROGRESS;
+	if (time_elapsed > time_limit) {
+		return COUNTDOWN_STATUS_OUT_OF_TIME;
+	}
+
+	skip += 1;
+	int threshold = command == COMMAND_COVER_IT ? 10 : 60000;
+	if (skip >= threshold) {
+		uint32_t time_left = time_limit - time_elapsed;
+		UD_UpdateTimeLeft(huart, time_left);
+		skip = 0;
+	}
+
+	// Else
+	return COUNTDOWN_STATUS_IN_PROGRESS;
+}
+
+void go_into_low_power() {
+#ifdef DO_POWER_SAVING
+	UD_UpdateLowPowerMode(huart, true);
+	HAL_SuspendTick();
+	HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+	HAL_ResumeTick();
+	SystemClock_Config(); // Reconfigure system clock after STOP mode
+#endif
 }
