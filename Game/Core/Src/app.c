@@ -3,6 +3,7 @@
 #include "app.h"
 #include "uart_display.h"
 #include "tof.h"
+#include "audio_player.h"
 #include "clap_detection.h"
 
 // PRIVATE DEFINITIONS
@@ -84,16 +85,14 @@ void BOPIT_Start() {
     ClapDetector_Init();
     ClapDetector_Start();
     while (1) {
-    		UD_UpdateGameStatus(huart, app_mode, command);
-    		UD_UpdateScore(huart, score);
         switch (app_mode) {
             case APP_MODE_IDLE:
+            	UD_UpdateGameStatus(huart, app_mode, command);
                 break;
             case APP_MODE_PLAYING_COMMAND:
                 command = rand(NUM_COMMANDS - 1) + 1;
-                // TODO: Play command
-                // AP_PlayRecording(command)
-                HAL_Delay(1000);	// Add small delay between rounds
+                AP_PlayRecording(command);
+                UD_UpdateGameStatus(huart, app_mode, command);
                 app_mode = APP_MODE_CAPTURING_RESPONSE;
                 break;
             case APP_MODE_CAPTURING_RESPONSE:
@@ -111,6 +110,7 @@ void BOPIT_Start() {
 					#endif
                 } else {
                     score++;
+                    UD_UpdateScore(huart, score);
                     app_mode = APP_MODE_PLAYING_COMMAND;
                 }
                 break;
