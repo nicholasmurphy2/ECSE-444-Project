@@ -30,9 +30,9 @@ void HAL_DFSDM_FilterRegConvHalfCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_
 }
 
 // ---------- Callback: Full buffer filled ----------
-void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filter) {
-    ClapDetector_ProcessSamples(&clapBuf[CLAP_BUF_SIZE / 2], CLAP_BUF_SIZE / 2);
-}
+//void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filter) {
+//    ClapDetector_ProcessSamples(&clapBuf[CLAP_BUF_SIZE / 2], CLAP_BUF_SIZE / 2);
+//}
 
 // ---------- Main loop polling function ----------
 uint8_t ClapDetector_WasClapDetected(void) {

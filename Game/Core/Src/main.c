@@ -123,8 +123,8 @@ int main(void)
   }
   HAL_TIM_Base_Start_IT(&htim2);
   AP_Init(&hdac1, &hdfsdm1_filter0);
-//  AP_StartLoadingProcedure(3);
-  BOPIT_Start();
+  AP_StartLoadingProcedure(3);
+  // BOPIT_Start();
 
   /* USER CODE END 2 */
 
@@ -541,15 +541,15 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 
-//void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filter){
-//	AP_HandleRecordingFull();
-//}
+void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filter){
+	AP_HandleRecordingFull();
+}
 
 void HAL_GPIO_EXTI_Callback(uint16_t pin) {
-  // AP_HandleButtonPress();
-  if (pin == BUTTON_EXTI13_Pin) {
-    BOPIT_Handle_Button_Press();
-  }
+  AP_HandleButtonPress();
+//  if (pin == BUTTON_EXTI13_Pin) {
+//    BOPIT_Handle_Button_Press();
+//  }
 }
 
 /* USER CODE END 4 */
