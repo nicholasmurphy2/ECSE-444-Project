@@ -48,7 +48,7 @@ The game uses the following actions, based on the board's integrated peripherals
 
 * STM32CubeIDE
 
-* Python 3 (with `pyserial` and `pygame-ce`)
+* Python 3
 
 ### Flashing the Firmware
 
@@ -58,16 +58,20 @@ The game uses the following actions, based on the board's integrated peripherals
 
 ### Running the Host Display
 
-1. Connect the board and identify the **Virtual COM Port** (e.g., `COM3` on Windows, `/dev/ttyACM0` on Linux/Mac).
+1. Connect the board and identify the **Virtual COM Port** (e.g., `COM5` on Windows) by running the following command for Windows PowerShell:\
+`Get-WmiObject Win32_SerialPort | Select-Object DeviceID, Caption`
 
-2. Navigate to the `HostProgram/` directory (where the Python script is).
+2. Open the Frontend/term.py script in any text or code editor, set the correct Virtual COM Port and save the script.
 
-3. Run the display script, replacing `COM_PORT` with your port:
+3. Navigate to the `Frontend/` directory (where the Python script is).
+
+4. Run the display script:\
+`python term.py`
 
 ### How to Play
 
 1. Start the game by pressing the **User Button**.
 
-2. Listen for the voice command and execute the corresponding physical action before the timer hits zero.
+2. Listen for the voice command or look for the displayed command and execute the corresponding physical action before the timer hits zero.
 
 3. Have fun!
