@@ -61,7 +61,7 @@ The game uses the following actions, based on the board's integrated peripherals
 1. Connect the board and identify the **Virtual COM Port** (e.g., `COM5` on Windows) by running the following command for Windows PowerShell:\
 `Get-WmiObject Win32_SerialPort | Select-Object DeviceID, Caption`
 
-2. Open the Frontend/term.py script in any text or code editor, set the correct Virtual COM Port and save the script.
+2. Open the Frontend/term.py script in any text or code editor, set the correct COM_PORT and save the script.
 
 3. Navigate to the `Frontend/` directory (where the Python script is).
 
