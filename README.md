@@ -17,10 +17,10 @@ A Python GUI displays the score, the current command, and the remaining time.
 
 ### Hardware Setup
 
-The complete hardware setup showing the STM32 board, the speaker, and the ToF sensor location.
+The complete hardware setup showing the STM32 board, the speaker, the GPIO button, the DFSDM Microphones and the ToF sensor location.
 
-> **Screenshot Placeholder:** Add a photo of your B-L4S5I-IOT01A board with all connected peripherals (speaker, etc.).
-> `![Hardware Setup](assets/hardware_photo.jpg)`
+<img width="1155" height="887" alt="image" src="https://github.com/user-attachments/assets/19f74bf6-d10c-4cca-8864-c671cbbbb6b8" />
+
 
 ## 🕹️ Implemented Commands
 
