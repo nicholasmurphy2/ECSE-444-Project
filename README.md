@@ -12,8 +12,8 @@ The game features **progressive difficulty** (the response time gets shorter as 
 
 A Python GUI displays the score, the current command, and the remaining time.
 
-> **Screenshot Placeholder:** Add a screenshot of the PC terminal/GUI displaying the game state (score, time, current command).
-> `![Game Screenshot](assets/game_screenshot.png)`
+<img width="1917" height="1142" alt="image" src="https://github.com/user-attachments/assets/dd96330a-64f4-4ed0-947a-8e5ffac85b2d" />
+
 
 ### Hardware Setup
 
@@ -58,7 +58,7 @@ The game uses the following actions, based on the board's integrated peripherals
 
 ### Running the Host Display
 
-1. Connect the board and identify the **Virtual COM Port** (e.g., `COM5` on Windows) by running the following command for Windows PowerShell:\
+1. Connect the board and identify the **STMicroelectronics STLink Virtual COM Port** (e.g., `COM5` on Windows) by running the following command for Windows PowerShell:\
 `Get-WmiObject Win32_SerialPort | Select-Object DeviceID, Caption`
 
 2. Open the Frontend/term.py script in any text or code editor, set the correct COM_PORT and save the script.
